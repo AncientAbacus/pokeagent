@@ -1,0 +1,195 @@
+{
+  "description": "Hand-labeled Q&A test set for PokeAgent evaluation with RAGAS",
+  "version": "1.0",
+  "questions": [
+
+    {
+      "id": "lore_01",
+      "category": "lore",
+      "question": "What is the lore behind Cubone's bone mask?",
+      "ground_truth": "Cubone wears the skull of its deceased mother. It is said that on the night of a full moon, Cubone cries for its mother. The skull it wears is the skull of its late mother.",
+      "expected_tool": "pokemon_lore",
+      "notes": "Classic Gen 1 lore question"
+    },
+    {
+      "id": "lore_02",
+      "category": "lore",
+      "question": "What do Pokedex entries say about Gengar?",
+      "ground_truth": "Gengar is said to be the shadow of a traveler who got separated from others. It lurks in the dark to steal the lives of those who become lost. It is known to lower the temperature of the room it is in.",
+      "expected_tool": "pokemon_lore",
+      "notes": "Ghost-type lore"
+    },
+    {
+      "id": "lore_03",
+      "category": "lore",
+      "question": "Describe the origin of Mewtwo according to its Pokedex entries.",
+      "ground_truth": "Mewtwo was created by scientists after years of gene splicing and DNA engineering experiments. It was created from Mew's DNA. It is considered the most powerful Pokemon but also the most savage.",
+      "expected_tool": "pokemon_lore",
+      "notes": "Legendary origin story"
+    },
+    {
+      "id": "lore_04",
+      "category": "lore",
+      "question": "What is the lore behind Haunter?",
+      "ground_truth": "Haunter hides in dark corners and licks its victims with its tongue. A lick from Haunter can cause uncontrollable shaking and leads to death within a few days. It is said to be born from the spirits of those who died in the mountains.",
+      "expected_tool": "pokemon_lore",
+      "notes": "Dark ghost lore"
+    },
+    {
+      "id": "lore_05",
+      "category": "lore",
+      "question": "According to the Pokedex, what does Dragonite do?",
+      "ground_truth": "Dragonite is an extremely rare Pokemon that can fly around the globe in 16 hours. It is said to guide ships through heavy storms. It lives on a small island in the sea.",
+      "expected_tool": "pokemon_lore",
+      "notes": "Dragon-type lore"
+    },
+
+    {
+      "id": "stats_01",
+      "category": "stats",
+      "question": "What are Charizard's base stats?",
+      "ground_truth": "Charizard has HP 78, Attack 84, Defense 78, Sp. Atk 109, Sp. Def 85, Speed 100, BST 534. It is a Fire/Flying type.",
+      "expected_tool": "pokemon_stats",
+      "notes": "Basic stats lookup"
+    },
+    {
+      "id": "stats_02",
+      "category": "stats",
+      "question": "Find Water-type Pokemon with BST under 400.",
+      "ground_truth": "Pokemon like Squirtle (BST 314), Marill (BST 250), Goldeen (BST 320) are Water types with BST under 400.",
+      "expected_tool": "search_pokemon",
+      "notes": "Filter by type + max BST"
+    },
+    {
+      "id": "stats_03",
+      "category": "stats",
+      "question": "What are Pikachu's abilities?",
+      "ground_truth": "Pikachu's abilities are Static and Lightning Rod (hidden ability).",
+      "expected_tool": "pokemon_stats",
+      "notes": "Ability lookup"
+    },
+    {
+      "id": "stats_04",
+      "category": "stats",
+      "question": "Which Pokemon have a BST over 550 in our database?",
+      "ground_truth": "High-BST Pokemon include Mewtwo (BST 680), Dragonite (BST 600), Charizard (BST 534).",
+      "expected_tool": "search_pokemon",
+      "notes": "Filter by min BST"
+    },
+    {
+      "id": "stats_05",
+      "category": "stats",
+      "question": "What type is Gengar?",
+      "ground_truth": "Gengar is a Ghost/Poison type Pokemon.",
+      "expected_tool": "pokemon_stats",
+      "notes": "Type lookup"
+    },
+
+    {
+      "id": "type_01",
+      "category": "type_matchup",
+      "question": "What types are Electric attacks weak against?",
+      "ground_truth": "Electric attacks are not very effective against Grass, Electric, and Dragon types, and have no effect against Ground types.",
+      "expected_tool": "type_matchups",
+      "notes": "Attacker perspective"
+    },
+    {
+      "id": "type_02",
+      "category": "type_matchup",
+      "question": "What is Fire type weak to?",
+      "ground_truth": "Fire type Pokemon are weak to Water, Rock, and Ground type attacks.",
+      "expected_tool": "type_matchups",
+      "notes": "Defender perspective"
+    },
+    {
+      "id": "type_03",
+      "category": "type_matchup",
+      "question": "What types resist Dragon attacks?",
+      "ground_truth": "Steel type resists Dragon attacks. Fairy type is immune to Dragon attacks.",
+      "expected_tool": "type_matchups",
+      "notes": "Resistance lookup"
+    },
+    {
+      "id": "type_04",
+      "category": "type_matchup",
+      "question": "What is Psychic type immune to?",
+      "ground_truth": "Psychic type Pokemon are immune to... actually Psychic has no immunity. It is weak to Bug, Ghost, and Dark type attacks.",
+      "expected_tool": "type_matchups",
+      "notes": "Edge case — type with no immunities"
+    },
+    {
+      "id": "type_05",
+      "category": "type_matchup",
+      "question": "What does Ground type beat?",
+      "ground_truth": "Ground type is super effective against Fire, Electric, Poison, Rock, and Steel type Pokemon.",
+      "expected_tool": "type_matchups",
+      "notes": "Super effective lookup"
+    },
+
+    {
+      "id": "team_01",
+      "category": "recommendation",
+      "question": "What's the best team to counter a Charizard?",
+      "ground_truth": "Charizard is Fire/Flying type. It is weak to Rock, Water, and Electric. Good counters include Rock-type Pokemon like Golem, Water types, and Electric types.",
+      "expected_tool": "suggest_team",
+      "notes": "Counter team building"
+    },
+    {
+      "id": "team_02",
+      "category": "recommendation",
+      "question": "Suggest a team to beat Gengar.",
+      "ground_truth": "Gengar is Ghost/Poison type, weak to Ground, Psychic, and Dark. Counters include Psychic-types like Alakazam and Ground-types.",
+      "expected_tool": "suggest_team",
+      "notes": "Ghost type counter"
+    },
+    {
+      "id": "team_03",
+      "category": "recommendation",
+      "question": "Build a counter team for Mewtwo.",
+      "ground_truth": "Mewtwo is pure Psychic type, weak to Bug, Ghost, and Dark. Dark-type Pokemon and Bug-types are effective counters.",
+      "expected_tool": "suggest_team",
+      "notes": "Legendary counter"
+    },
+    {
+      "id": "team_04",
+      "category": "recommendation",
+      "question": "What Pokemon should I use against a Blastoise?",
+      "ground_truth": "Blastoise is a Water type, weak to Electric and Grass attacks. Electric-types like Raichu and Grass-types are good counters.",
+      "expected_tool": "suggest_team",
+      "notes": "Starter counter"
+    },
+    {
+      "id": "team_05",
+      "category": "recommendation",
+      "question": "How do I counter Gyarados?",
+      "ground_truth": "Gyarados is Water/Flying type, weak to Electric (4x), Rock. Raichu or other Electric types are the best counters.",
+      "expected_tool": "suggest_team",
+      "notes": "Dual type with 4x weakness"
+    },
+
+    {
+      "id": "multihop_01",
+      "category": "multi_hop",
+      "question": "Is Charizard bulky? What are its type weaknesses?",
+      "ground_truth": "Charizard has BST 534 with 78 HP and 78 Defense which is moderate. As a Fire/Flying type it is weak to Rock, Water, and Electric attacks. Rock in particular does 4x damage.",
+      "expected_tools": ["pokemon_stats", "type_matchups"],
+      "notes": "Stats + type lookup"
+    },
+    {
+      "id": "multihop_02",
+      "category": "multi_hop",
+      "question": "Tell me about Pikachu's lore and its competitive stats.",
+      "ground_truth": "Pikachu is an electric mouse Pokemon. Its Pokedex entries describe it storing electricity in its cheeks. Competitively, Pikachu has BST 320 which is low, with 90 Speed but only 35 HP.",
+      "expected_tools": ["pokemon_lore", "pokemon_stats"],
+      "notes": "Lore + stats combo"
+    },
+    {
+      "id": "multihop_03",
+      "category": "multi_hop",
+      "question": "Compare the BST of Charizard and Blastoise, and tell me which types they share.",
+      "ground_truth": "Charizard has BST 534 (Fire/Flying). Blastoise has BST 530 (Water). Charizard has slightly higher BST. They share no common types.",
+      "expected_tools": ["pokemon_stats", "pokemon_stats"],
+      "notes": "Two stats lookups"
+    }
+  ]
+}
