@@ -21,6 +21,8 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 import logging
 
+from dotenv import load_dotenv
+
 # ChromaDB for vector storage
 import chromadb
 
@@ -30,6 +32,8 @@ from sentence_transformers import SentenceTransformer
 # Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 # Configuration
 CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./rag/chroma_db")
@@ -73,7 +77,10 @@ class PokemonEmbedder:
         # Get or create collection
         self.collection = self.client.get_or_create_collection(
             name=COLLECTION_NAME,
-            metadata={"description": "Pokemon lore & flavor text"}
+            metadata={
+                "description": "Pokemon lore & flavor text",
+                "hnsw:space": "cosine",  # Chroma defaults to L2
+            }
         )
         logger.info(f"✓ ChromaDB collection ready: {COLLECTION_NAME}")
     
@@ -196,18 +203,21 @@ class PokemonEmbedder:
         Returns:
             List of {pokemon_name, flavor_text, generation, distance}
         """
-        # Build where filter
+        # Build where filter (Chroma requires $and for more than one condition)
+        conditions = []
+        if generation_filter is not None:
+            conditions.append({"generation": str(generation_filter)})
+        if pokemon_filter is not None:
+            conditions.append({"pokemon_name": pokemon_filter.lower()})
         where_filter = None
-        if generation_filter is not None or pokemon_filter is not None:
-            where_filter = {}
-            if generation_filter is not None:
-                where_filter["generation"] = str(generation_filter)
-            if pokemon_filter is not None:
-                where_filter["pokemon_name"] = pokemon_filter
+        if len(conditions) == 1:
+            where_filter = conditions[0]
+        elif conditions:
+            where_filter = {"$and": conditions}
         
-        # Query
+        # Embed the query with the same model used for the documents
         results = self.collection.query(
-            query_texts=[query],
+            query_embeddings=self.embed_texts([query]),
             n_results=k,
             where=where_filter
         )

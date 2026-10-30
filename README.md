@@ -26,13 +26,16 @@ pip install -r requirements.txt
 # 2. Copy env template and add your OpenAI key
 cp .env.example .env
 
-# 3. Run data ingestion (populates local cache and databases)
-python data/ingest.py
+# 3. Ingest Gen 1 into SQLite (~40s; use --limit 1025 for the full Dex)
+python -m data.ingest
 
-# 4. Start the backend
+# 4. Embed flavor text into ChromaDB (downloads all-MiniLM-L6-v2 on first run)
+python -m rag.embedder
+
+# 5. Start the backend
 python -m uvicorn api.main:app --reload
 
-# 5. In another terminal, start the frontend
+# 6. In another terminal, start the frontend
 cd frontend && npm install && npm start
 ```
 

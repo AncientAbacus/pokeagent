@@ -339,11 +339,11 @@ def retrieve_lore(query: str, k: int = 5, pokemon_filter: Optional[str] = None) 
             ...
         ]
     """
-    from rag.embedder import PokemonEmbedder
+    # Shared singleton so the embedding model loads once, not per call
+    from rag.retriever import retrieve
     
     try:
-        embedder = PokemonEmbedder()
-        results = embedder.search(query, k=k, pokemon_filter=pokemon_filter)
+        results = retrieve(query, k=k, pokemon_filter=pokemon_filter)
         logger.info(f"RAG retrieval for '{query}': found {len(results)} entries")
         return results
     except Exception as e:
