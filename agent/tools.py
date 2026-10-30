@@ -13,7 +13,7 @@ Import these into agent.py to wire them into LangGraph.
 
 import sqlite3
 import logging
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Set
 import os
 
 # Logging for transparency
@@ -217,30 +217,82 @@ def search_by_criteria(
 # TOOL 3: Type Matchups
 # ============================================================================
 
-# 18x18 type effectiveness table (generation 9)
+# 18x18 type effectiveness table (generation 6+)
 # Rows = attacker type, Columns = defender type
-# Value: 1.0 = neutral, 2.0 = super effective, 0.5 = not very effective
+# Value: 2 = super effective, 0.5 = not very effective, 0 = no effect.
+# Pairs not listed are neutral (1.0).
 TYPE_MATCHUPS = {
     # Format: attacking_type -> {defending_type: effectiveness}
-    "normal": {"rock": 0.5, "steel": 0.5, "ghost": 0},
-    "fire": {"fire": 0.5, "water": 0.5, "grass": 2, "ice": 2, "bug": 2, "steel": 2, "fairy": 1},
-    "water": {"fire": 2, "water": 0.5, "grass": 0.5, "ground": 2},
-    "electric": {"water": 2, "electric": 0.5, "grass": 0.5, "ground": 0, "flying": 2},
-    "grass": {"fire": 0.5, "water": 2, "grass": 0.5, "poison": 0.5, "ground": 2, "flying": 0.5, "bug": 0.5, "steel": 0.5, "fairy": 0.5},
-    "ice": {"fire": 0.5, "water": 0.5, "grass": 2, "ice": 0.5, "ground": 2, "flying": 2, "dragon": 2},
-    "fighting": {"normal": 2, "flying": 0.5, "poison": 0.5, "rock": 2, "bug": 0.5, "ghost": 0, "steel": 2, "psychic": 0.5, "ice": 2, "dark": 2, "fairy": 0.5},
-    "poison": {"grass": 2, "poison": 0.5, "ground": 0, "rock": 0.5, "bug": 1, "ghost": 0.5, "steel": 0, "fairy": 2},
+    "normal": {"rock": 0.5, "ghost": 0, "steel": 0.5},
+    "fire": {"fire": 0.5, "water": 0.5, "grass": 2, "ice": 2, "bug": 2, "rock": 0.5, "dragon": 0.5, "steel": 2},
+    "water": {"fire": 2, "water": 0.5, "grass": 0.5, "ground": 2, "rock": 2, "dragon": 0.5},
+    "electric": {"water": 2, "electric": 0.5, "grass": 0.5, "ground": 0, "flying": 2, "dragon": 0.5},
+    "grass": {"fire": 0.5, "water": 2, "grass": 0.5, "poison": 0.5, "ground": 2, "flying": 0.5, "bug": 0.5, "rock": 2, "dragon": 0.5, "steel": 0.5},
+    "ice": {"fire": 0.5, "water": 0.5, "grass": 2, "ice": 0.5, "ground": 2, "flying": 2, "dragon": 2, "steel": 0.5},
+    "fighting": {"normal": 2, "ice": 2, "poison": 0.5, "flying": 0.5, "psychic": 0.5, "bug": 0.5, "rock": 2, "ghost": 0, "dark": 2, "steel": 2, "fairy": 0.5},
+    "poison": {"grass": 2, "poison": 0.5, "ground": 0.5, "rock": 0.5, "ghost": 0.5, "steel": 0, "fairy": 2},
     "ground": {"fire": 2, "electric": 2, "grass": 0.5, "poison": 2, "flying": 0, "bug": 0.5, "rock": 2, "steel": 2},
-    "flying": {"normal": 1, "fighting": 2, "flying": 1, "poison": 1, "ground": 1, "bug": 2, "rock": 0.5, "steel": 0.5, "grass": 2, "electric": 0.5, "psychic": 1},
+    "flying": {"electric": 0.5, "grass": 2, "fighting": 2, "bug": 2, "rock": 0.5, "steel": 0.5},
     "psychic": {"fighting": 2, "poison": 2, "psychic": 0.5, "dark": 0, "steel": 0.5},
     "bug": {"fire": 0.5, "grass": 2, "fighting": 0.5, "poison": 0.5, "flying": 0.5, "psychic": 2, "ghost": 0.5, "dark": 2, "steel": 0.5, "fairy": 0.5},
-    "rock": {"normal": 1, "fire": 2, "water": 0.5, "grass": 0.5, "ice": 2, "fighting": 0.5, "ground": 0.5, "flying": 2, "bug": 2, "steel": 0.5},
-    "ghost": {"normal": 0, "fighting": 1, "poison": 1, "bug": 1, "ghost": 2, "dark": 0.5, "steel": 1, "fairy": 1},
+    "rock": {"fire": 2, "ice": 2, "fighting": 0.5, "ground": 0.5, "flying": 2, "bug": 2, "steel": 0.5},
+    "ghost": {"normal": 0, "psychic": 2, "ghost": 2, "dark": 0.5},
     "dragon": {"dragon": 2, "steel": 0.5, "fairy": 0},
-    "dark": {"fighting": 0.5, "ghost": 2, "dark": 0.5, "steel": 0.5, "fairy": 0.5},
-    "steel": {"normal": 2, "flying": 2, "rock": 2, "bug": 1, "steel": 0.5, "grass": 1, "ice": 2, "dragon": 1, "fairy": 2, "fire": 0.5, "water": 0.5, "psychic": 1, "poison": 2, "ground": 1},
-    "fairy": {"fighting": 2, "poison": 0.5, "bug": 1, "dark": 2, "steel": 0.5, "fire": 0.5}
+    "dark": {"fighting": 0.5, "psychic": 2, "ghost": 2, "dark": 0.5, "fairy": 0.5},
+    "steel": {"fire": 0.5, "water": 0.5, "electric": 0.5, "ice": 2, "rock": 2, "steel": 0.5, "fairy": 2},
+    "fairy": {"fire": 0.5, "fighting": 2, "poison": 0.5, "dragon": 2, "dark": 2, "steel": 0.5},
 }
+
+
+def get_combined_multiplier(attacking_type: str, defending_types: List[str]) -> float:
+    """
+    Compute the damage multiplier of one attacking type against a (possibly dual) typing.
+
+    Per-type multipliers are multiplied together, so dual-type interactions
+    (4x, 0.25x, or a weakness cancelled by a resistance) are handled correctly.
+
+    Args:
+        attacking_type: Attacking move type (e.g., "rock")
+        defending_types: The defender's types (e.g., ["fire", "flying"])
+
+    Returns:
+        Combined multiplier (0, 0.25, 0.5, 1, 2, or 4)
+
+    Example:
+        >>> get_combined_multiplier("rock", ["fire", "flying"])
+        4.0
+    """
+    chart = TYPE_MATCHUPS.get(attacking_type.lower(), {})
+    multiplier = 1.0
+    for def_type in defending_types:
+        multiplier *= chart.get(def_type.lower(), 1.0)
+    return multiplier
+
+
+def get_weaknesses(defending_types: List[str]) -> Dict[str, float]:
+    """
+    List every attacking type that is super effective against a typing.
+
+    Args:
+        defending_types: The defender's types (e.g., ["grass", "poison"])
+
+    Returns:
+        Dict of attacking_type -> multiplier (>= 2), ordered strongest first
+        (4x before 2x), then alphabetically
+
+    Example:
+        >>> get_weaknesses(["fire", "flying"])
+        {'rock': 4.0, 'electric': 2.0, 'water': 2.0}
+    """
+    weaknesses = {
+        atk_type: get_combined_multiplier(atk_type, defending_types)
+        for atk_type in TYPE_MATCHUPS
+    }
+    ordered = sorted(
+        ((t, m) for t, m in weaknesses.items() if m >= 2),
+        key=lambda item: (-item[1], item[0]),
+    )
+    return dict(ordered)
 
 
 def get_type_matchups(
@@ -355,75 +407,171 @@ def retrieve_lore(query: str, k: int = 5, pokemon_filter: Optional[str] = None) 
 # TOOL 5: Suggest Counter Team (Multi-step)
 # ============================================================================
 
+def _get_types_for_pokemon(names: List[str]) -> Dict[str, List[str]]:
+    """
+    Look up the types of several Pokemon in one query.
+
+    Args:
+        names: Pokemon names (case-insensitive)
+
+    Returns:
+        Dict of lowercase name -> list of types ordered by slot
+    """
+    if not names:
+        return {}
+    conn = sqlite3.connect(SQLITE_DB_PATH)
+    placeholders = ",".join("?" for _ in names)
+    rows = conn.execute(f"""
+        SELECT LOWER(p.name), pt.type_name
+        FROM pokemon p
+        JOIN pokemon_types pt ON p.id = pt.pokemon_id
+        WHERE LOWER(p.name) IN ({placeholders})
+        ORDER BY p.name, pt.slot
+    """, [n.lower() for n in names]).fetchall()
+    conn.close()
+
+    types_by_name: Dict[str, List[str]] = {}
+    for name, type_name in rows:
+        types_by_name.setdefault(name, []).append(type_name)
+    return types_by_name
+
+
+def _format_multiplier(multiplier: float) -> str:
+    """Format a multiplier like 4.0 -> '4x' or 0.5 -> '0.5x'."""
+    return f"{multiplier:g}x"
+
+
 def suggest_counter_team(
     target_pokemon: str,
     team_size: int = 3,
-    max_bst: Optional[int] = 700
+    max_bst: Optional[int] = 700,
+    candidates_per_type: int = 10
 ) -> Dict[str, Any]:
     """
     Suggest a team of Pokemon to counter a target Pokemon.
-    
-    This tool uses other tools (get_pokemon_stats, get_type_matchups, search_by_criteria).
-    
+
+    Weaknesses are computed against the target's full typing (per-type
+    multipliers are multiplied), so only types that are truly super effective
+    (>= 2x) are used, with 4x weaknesses tried first. For each weakness the
+    highest-BST Pokemon of that type is picked, skipping the target itself,
+    anything sharing the target's exact typing, and Pokemon already chosen.
+    If there are fewer weaknesses than team slots, weaknesses are cycled
+    again to pick the next-best candidate for each.
+
+    Recommendations are based on the counter's own type (STAB), not a verified
+    movepool.
+
     Args:
         target_pokemon: Pokemon name to counter
         team_size: How many Pokemon to recommend
         max_bst: Optional cap on BST for balance
-        
+        candidates_per_type: How many top-BST Pokemon to consider per weakness
+
     Returns:
-        Dict with reasoning and recommended Pokemon
-        
+        Dict with target info, weaknesses, recommended Pokemon and reasoning
+
     Example:
-        >>> suggest_counter_team("garchomp")
+        >>> suggest_counter_team("charizard")
         {
-            'target': 'garchomp',
-            'target_types': ['dragon', 'ground'],
+            'target': 'charizard',
+            'target_types': ['fire', 'flying'],
+            'weaknesses': {'rock': 4.0, 'electric': 2.0, 'water': 2.0},
             'recommended_team': [
-                {'name': 'salamence', 'reason': 'ice weakness'},
+                {'name': 'aerodactyl', 'bst': 515, 'types': ['rock', 'flying'],
+                 'counter_type': 'rock', 'multiplier': 4.0,
+                 'reason': 'rock-type, rock is 4x vs fire/flying'},
                 ...
             ],
             'reasoning': "..."
         }
     """
-    logging.info(f"Building counter team for {target_pokemon}")
-    
+    logger.info(f"Building counter team for {target_pokemon}")
+
     # Step 1: Get target stats & types
     target_stats = get_pokemon_stats(target_pokemon)
     if not target_stats:
         return {"error": f"Pokemon not found: {target_pokemon}"}
-    
+
+    target_name = target_stats['name'].lower()
     target_types = target_stats['types']
-    logging.info(f"  Target types: {target_types}")
-    
-    # Step 2: Identify weaknesses
-    weak_to_types = set()
-    for ptype in target_types:
-        matchups = get_type_matchups(ptype)
-        weak_to_types.update(matchups.get('weak_to', []))
-    
-    logging.info(f"  Weak to: {weak_to_types}")
-    
-    # Step 3: Search for strong counters in each weakness
-    counters = []
-    for weakness in list(weak_to_types)[:team_size]:
-        candidates = search_by_criteria(
+    target_typing = "/".join(target_types)
+    logger.info(f"  Target types: {target_types}")
+
+    # Step 2: Combined weaknesses against the full typing (4x first)
+    weaknesses = get_weaknesses(target_types)
+    logger.info(f"  Weaknesses: {weaknesses}")
+
+    if not weaknesses:
+        return {
+            'target': target_name,
+            'target_types': target_types,
+            'weaknesses': {},
+            'recommended_team': [],
+            'reasoning': f"{target_name} ({target_typing}) has no super effective weaknesses",
+        }
+
+    # Step 3: Gather eligible candidates for each weakness, best BST first
+    candidates_by_type: Dict[str, List[Dict[str, Any]]] = {}
+    for weakness in weaknesses:
+        results = search_by_criteria(
             type_filter=weakness,
-            min_bst=500,
             max_bst=max_bst,
-            limit=3
+            limit=candidates_per_type
         )
-        if candidates:
-            counters.append({
-                'name': candidates[0]['name'],
-                'bst': candidates[0]['bst'],
-                'reason': f"Has {weakness} moves, weak_to {weakness}"
+        types_by_name = _get_types_for_pokemon([r['name'] for r in results])
+        eligible = []
+        for r in results:
+            name = r['name'].lower()
+            cand_types = types_by_name.get(name, [])
+            if name == target_name or set(cand_types) == set(target_types):
+                continue
+            eligible.append({**r, 'types': cand_types})
+        candidates_by_type[weakness] = eligible
+
+    # Step 4: Round-robin over weaknesses (strongest first), no duplicates
+    team: List[Dict[str, Any]] = []
+    chosen: Set[str] = set()
+    while len(team) < team_size:
+        added = False
+        for weakness, multiplier in weaknesses.items():
+            if len(team) >= team_size:
+                break
+            pool = candidates_by_type[weakness]
+            while pool and pool[0]['name'].lower() in chosen:
+                pool.pop(0)
+            if not pool:
+                continue
+            pick = pool.pop(0)
+            chosen.add(pick['name'].lower())
+            team.append({
+                'name': pick['name'],
+                'bst': pick['bst'],
+                'types': pick['types'],
+                'counter_type': weakness,
+                'multiplier': multiplier,
+                'reason': (
+                    f"{weakness}-type, {weakness} is "
+                    f"{_format_multiplier(multiplier)} vs {target_typing}"
+                ),
             })
-    
+            added = True
+        if not added:
+            break
+
+    weakness_desc = ", ".join(
+        f"{t} ({_format_multiplier(m)})" for t, m in weaknesses.items()
+    )
+    logger.info(f"  Recommended: {[m['name'] for m in team]}")
     return {
-        'target': target_pokemon,
+        'target': target_name,
         'target_types': target_types,
-        'recommended_team': counters[:team_size],
-        'reasoning': f"Counters weak to {list(weak_to_types)[:team_size]}"
+        'weaknesses': weaknesses,
+        'recommended_team': team,
+        'reasoning': (
+            f"{target_name} ({target_typing}) is weak to {weakness_desc}. "
+            f"Picked the highest-BST Pokemon of each weakness type, strongest "
+            f"weakness first, excluding the target and its own typing."
+        ),
     }
 
 
