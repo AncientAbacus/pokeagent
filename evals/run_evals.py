@@ -46,10 +46,7 @@ def load_test_set(category: str = None, limit: int = None) -> List[Dict]:
     test_set_path = Path(__file__).parent / "test_set.json"
 
     with open(test_set_path, "r") as f:
-        # Strip JS-style comments before parsing (our JSON uses // comments)
-        raw = f.read()
-        lines = [l for l in raw.splitlines() if not l.strip().startswith("//")]
-        data = json.loads("\n".join(lines))
+        data = json.load(f)
 
     questions = data["questions"]
 
@@ -221,7 +218,7 @@ def main():
     print("RAGAS Evaluation Results")
     print("=" * 60)
     for metric, score in scores.items():
-        print(f"  {metric}: {score:.4f}")
+        print(f"  {metric}: {score}" if metric == "error" else f"  {metric}: {score:.4f}")
 
     # Save report
     report_path = save_report(scores, dataset_dict)

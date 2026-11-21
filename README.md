@@ -35,8 +35,8 @@ python -m rag.embedder
 # 5. Start the backend
 python -m uvicorn api.main:app --reload
 
-# 6. In another terminal, start the frontend
-cd frontend && npm install && npm start
+# 6. In another terminal, start the frontend (from the repo root)
+npm install && npm start
 ```
 
 Visit `http://localhost:3000` to chat with PokeAgent.

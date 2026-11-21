@@ -108,16 +108,16 @@ def create_tools() -> list:
         return get_type_matchups(pokemon_type)
 
     @tool
-    def pokemon_lore(query: str, k: int = 5) -> list:
+    def pokemon_lore(query: str, pokemon_name: Optional[str] = None, k: int = 5) -> list:
         """
         Retrieve Pokemon lore and Pokedex flavor text via semantic search.
 
-        Use this for questions about Pokemon origins, legendary stories, or
-        Pokedex entries. Examples:
-        - "What's the lore behind Cubone?"
-        - "Describe Mewtwo's origin"
+        Set pokemon_name (lowercase) when the question is about one Pokemon,
+        so only its entries are searched. Examples:
+        - "What's the lore behind Cubone?" -> pokemon_name="cubone"
+        - "Which Pokemon live in volcanoes?" -> no pokemon_name
         """
-        return retrieve_lore(query, k=k)
+        return retrieve_lore(query, k=k, pokemon_filter=pokemon_name)
 
     @tool
     def suggest_team(target_pokemon: str, team_size: int = 3) -> dict:
@@ -201,7 +201,6 @@ class PokeAgent:
             {
                 'answer':     Final response text,
                 'tool_calls': List of {tool, input, output},
-                'reasoning':  Formatted trace string,
                 'messages':   Full message list (pass back for next turn)
             }
         """
@@ -224,7 +223,6 @@ class PokeAgent:
         return {
             "answer": last_message.content,
             "tool_calls": tool_calls,
-            "reasoning": _format_reasoning(tool_calls),
             "messages": final_state["messages"],
         }
 
@@ -264,20 +262,6 @@ def _extract_tool_calls(messages: List[BaseMessage]) -> List[Dict[str, Any]]:
     return tool_calls
 
 
-def _format_reasoning(tool_calls: List[Dict]) -> str:
-    """Format tool calls as a human-readable reasoning trace."""
-    if not tool_calls:
-        return "No tools used (LLM answered directly)"
-
-    trace = "Tool Usage:\n"
-    for i, call in enumerate(tool_calls, 1):
-        trace += f"\n{i}. {call['tool']}\n"
-        trace += f"   Input:  {json.dumps(call['input'])}\n"
-        output_str = json.dumps(call['output'])[:200]
-        trace += f"   Output: {output_str}...\n"
-    return trace
-
-
 # ============================================================================
 # Quick test
 # ============================================================================
@@ -299,7 +283,7 @@ def main():
 
     result = agent.run("What are Charizard's stats?")
     print(f"\nAnswer: {result['answer']}\n")
-    print(f"Reasoning:\n{result['reasoning']}")
+    print(f"Tool calls:\n{json.dumps(result['tool_calls'], indent=2)[:1000]}")
 
 
 if __name__ == "__main__":

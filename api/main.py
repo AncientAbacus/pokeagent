@@ -5,7 +5,7 @@ FastAPI Backend for PokeAgent
 Exposes a single POST /chat endpoint that:
 1. Accepts a user message + conversation history
 2. Passes them to the LangGraph agent
-3. Returns the answer + full reasoning trace (tool calls)
+3. Returns the answer + the tool calls the agent made
 
 Run from project root:
     uvicorn api.main:app --reload --port 8000
@@ -97,7 +97,6 @@ class ChatResponse(BaseModel):
     """Response returned to the frontend."""
     answer: str
     tool_calls: List[ToolCallRecord]
-    reasoning: str
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
@@ -120,7 +119,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         { "message": "...", "history": [ {"role": "user", "content": "..."}, ... ] }
 
     Returns:
-        { "answer": "...", "tool_calls": [...], "reasoning": "..." }
+        { "answer": "...", "tool_calls": [...] }
     """
     if _agent is None:
         raise HTTPException(
@@ -158,6 +157,5 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 output=tc["output"]
             )
             for tc in result.get("tool_calls", [])
-        ],
-        reasoning=result.get("reasoning", "")
+        ]
     )

@@ -47,7 +47,7 @@ export default function ChatWindow({ messages, isLoading, onSendMessage }) {
             <div className="text-xs space-y-1 text-gray-400">
               <p>"What are Charizard's stats?"</p>
               <p>"What's the lore behind Cubone?"</p>
-              <p>"Build a team to counter Garchomp"</p>
+              <p>"Build a team to counter Gyarados"</p>
               <p>"Water types weak to Electric?"</p>
             </div>
           </div>

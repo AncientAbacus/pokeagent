@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import ChatWindow from './components/ChatWindow';
 
 const API_URL = 'http://localhost:8000';
@@ -10,8 +9,7 @@ const API_URL = 'http://localhost:8000';
  * Root component. Owns all conversation state and the sendMessage function.
  *
  * State shape for each message:
- *   { role: 'user' | 'assistant', content: string,
- *     toolCalls: Array, reasoning: string }
+ *   { role: 'user' | 'assistant', content: string, toolCalls: Array }
  *
  * Why keep history here?
  * The backend needs the full conversation history to give multi-turn answers.
@@ -26,7 +24,7 @@ export default function App() {
     if (!text.trim()) return;
 
     // Append user message immediately for instant feedback
-    const userMsg = { role: 'user', content: text, toolCalls: [], reasoning: '' };
+    const userMsg = { role: 'user', content: text, toolCalls: [] };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setIsLoading(true);
@@ -36,21 +34,23 @@ export default function App() {
     const history = messages.map(m => ({ role: m.role, content: m.content }));
 
     try {
-      const res = await axios.post(`${API_URL}/chat`, {
-        message: text,
-        history,
+      const res = await fetch(`${API_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history }),
       });
+      // Unhandled server errors return plain text, not JSON
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || `${res.status} ${res.statusText}`);
 
       const botMsg = {
         role: 'assistant',
-        content: res.data.answer,
-        toolCalls: res.data.tool_calls || [],
-        reasoning: res.data.reasoning || '',
+        content: data.answer,
+        toolCalls: data.tool_calls || [],
       };
       setMessages([...updatedMessages, botMsg]);
     } catch (err) {
-      const detail = err.response?.data?.detail || err.message;
-      setError(`Error: ${detail}`);
+      setError(`Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }

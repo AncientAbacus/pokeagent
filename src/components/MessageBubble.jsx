@@ -1,5 +1,6 @@
 import React from 'react';
 import ReasoningTrace from './ReasoningTrace';
+import PokemonCard from './PokemonCard';
 
 /**
  * MessageBubble
@@ -7,10 +8,16 @@ import ReasoningTrace from './ReasoningTrace';
  * Renders a single chat turn.
  *
  * User messages: right-aligned, red background
- * Assistant messages: left-aligned, cream background, with optional ReasoningTrace
+ * Assistant messages: left-aligned, cream background, with a card per Pokemon
+ * the agent looked up and an optional ReasoningTrace
  */
 export default function MessageBubble({ message }) {
   const isUser = message.role === 'user';
+  const toolCalls = message.toolCalls || [];
+  const pokemon = toolCalls
+    .filter(c => c.tool === 'pokemon_stats' && c.output?.name)
+    .map(c => c.output)
+    .filter((p, i, all) => all.findIndex(q => q.name === p.name) === i);
 
   return (
     <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
@@ -21,25 +28,25 @@ export default function MessageBubble({ message }) {
 
       {/* Bubble */}
       <div
-        className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm
+        className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap
           ${isUser
             ? 'bg-poke-red text-white rounded-br-none'
             : 'bg-poke-cream border border-poke-cream-dark text-gray-800 rounded-bl-none'
           }`}
       >
-        {/* Preserve line breaks in the answer */}
-        {message.content.split('\n').map((line, i) => (
-          <span key={i}>
-            {line}
-            {i < message.content.split('\n').length - 1 && <br />}
-          </span>
-        ))}
+        {message.content}
       </div>
 
+      {pokemon.length > 0 && (
+        <div className="mt-2 flex gap-2 flex-wrap">
+          {pokemon.map(p => <PokemonCard key={p.name} pokemon={p} />)}
+        </div>
+      )}
+
       {/* Show reasoning trace below assistant messages if tools were used */}
-      {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
+      {!isUser && toolCalls.length > 0 && (
         <div className="mt-2 w-full max-w-[90%]">
-          <ReasoningTrace toolCalls={message.toolCalls} />
+          <ReasoningTrace toolCalls={toolCalls} />
         </div>
       )}
     </div>

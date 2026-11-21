@@ -167,8 +167,10 @@ class PokemonEmbedder:
                 for entry in batch
             ]
             
-            # Embed and add to collection
-            embeddings = self.embed_texts(texts)
+            # Most entries never name their Pokemon, so prefix it for name-based queries
+            embeddings = self.embed_texts(
+                [f"{entry['pokemon_name']}: {entry['flavor_text']}" for entry in batch]
+            )
             self.collection.upsert(
                 ids=ids,
                 embeddings=embeddings,
